@@ -36,15 +36,16 @@ Public Class EventHandlers
                 mPropertyDefinition = mPropertyService.GetPropertyDefinitionInfosByEntityClassId("FILE", New Long() {110})
 
                 ' Dim itemProperties As PropInst() = propSvc.GetPropertiesByEntityIds("ITEM", New Long() {Item.Id})
-
+                Debug.Print("##################################################################################################")
                 Debug.Print("El fichero: " & mFile.Name &
                             " con Id: " & mFileId &
                             " se va a promocionar al Item: " & mItemId)
-                Debug.Print("##################################################################################################")
 
                 For Each mProperty In mFileProperties
                     mPropertyDefinition = mPropertyService.GetPropertyDefinitionInfosByEntityClassId("FILE", New Long() {mProperty.PropDefId})
-                    If mPropertyDefinition(0).PropDef.DispName <> "Miniatura" Then
+                    If mPropertyDefinition(0).PropDef.DispName <> "Miniatura" And
+                        (mPropertyDefinition(0).PropDef.DispName = "Nº de pieza" Or mPropertyDefinition(0).PropDef.DispName = "Extensión de archivo") Then
+                        ' If mPropertyDefinition(0).PropDef.DispName <> "Miniatura" Then
                         Debug.Print(mPropertyDefinition(0).PropDef.Id &
                                     " : " & mPropertyDefinition(0).PropDef.DispName &
                                     " = " & mProperty.Val)
