@@ -28,12 +28,21 @@ Public Class EventHandlers
         Dim mFileProperties As PropInst()
         Dim mProperty As PropInst
         Dim mPropertyDefinition As PropDefInfo()
+        Dim mCompIds As Long()
+        Dim mItem As Item
+
+        mCompIds = mItemIds.PrimaryArray()
+        mItemService.PromoteComponents(timestamp:=Now, mCompIds)
+        Dim mItemsAndFiles As ItemsAndFiles = mItemService.GetPromoteComponentsResults(timestamp:=Now)
+
+        For Each mItems In mItemsAndFiles.ItemRevArray()
+            Debug.Print(mItems.ItemNum)
+        Next
 
         For Each mFileId In e.FileIds
             For Each mItemId In mItemIds.PrimaryArray()
                 mFile = mDocumentService.GetFileById(mFileId)
                 mFileProperties = mPropertyService.GetPropertiesByEntityIds("FILE", New Long() {mFile.Id})
-                mPropertyDefinition = mPropertyService.GetPropertyDefinitionInfosByEntityClassId("FILE", New Long() {110})
 
                 ' Dim itemProperties As PropInst() = propSvc.GetPropertiesByEntityIds("ITEM", New Long() {Item.Id})
                 Debug.Print("##################################################################################################")
@@ -44,7 +53,7 @@ Public Class EventHandlers
                 For Each mProperty In mFileProperties
                     mPropertyDefinition = mPropertyService.GetPropertyDefinitionInfosByEntityClassId("FILE", New Long() {mProperty.PropDefId})
                     If mPropertyDefinition(0).PropDef.DispName <> "Miniatura" And
-                        (mPropertyDefinition(0).PropDef.DispName = "Nº de pieza" Or mPropertyDefinition(0).PropDef.DispName = "Extensión de archivo") Then
+                    (mPropertyDefinition(0).PropDef.DispName = "Nº de pieza" Or mPropertyDefinition(0).PropDef.DispName = "Extensión de archivo") Then
                         ' If mPropertyDefinition(0).PropDef.DispName <> "Miniatura" Then
                         Debug.Print(mPropertyDefinition(0).PropDef.Id &
                                     " : " & mPropertyDefinition(0).PropDef.DispName &
@@ -53,6 +62,7 @@ Public Class EventHandlers
                 Next
             Next
         Next
+        Debug.Print("eureka or not? parece que si")
     End Sub
 
 End Class
