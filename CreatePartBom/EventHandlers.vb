@@ -13,56 +13,61 @@ Public Class EventHandlers
 
     Public Sub OnLoad() Implements IWebServiceExtension.OnLoad
         ' Item Events
-        AddHandler ItemService.PromoteItemEvents.Post, AddressOf PromoteItemEvents_Post
+        AddHandler ItemService.PromoteItemEvents.Pre, AddressOf PromoteItemEvents_Pre
     End Sub
 
 #End Region
 
-    Private Sub PromoteItemEvents_Post(ByVal sender As Object, ByVal e As PromoteItemCommandEventArgs)
-        Dim mFileId As Long
+    Private Sub PromoteItemEvents_Pre(ByVal sender As Object, ByVal e As PromoteItemCommandEventArgs)
+
         Dim mItemService As Autodesk.Connectivity.WebServices.ItemService = sender
         Dim mDocumentService As Autodesk.Connectivity.WebServices.DocumentService = mItemService.WebServiceManager.DocumentService
         Dim mPropertyService As Autodesk.Connectivity.WebServices.PropertyService = mItemService.WebServiceManager.PropertyService
-        Dim mItemIds As GetPromoteOrderResults = mItemService.GetPromoteComponentOrder(timestamp:=Now)
-        Dim mFile As File
-        Dim mFileProperties As PropInst()
-        Dim mProperty As PropInst
-        Dim mPropertyDefinition As PropDefInfo()
-        Dim mCompIds As Long()
-        Dim mItem As Item
 
-        mCompIds = mItemIds.PrimaryArray()
-        mItemService.PromoteComponents(timestamp:=Now, mCompIds)
-        Dim mItemsAndFiles As ItemsAndFiles = mItemService.GetPromoteComponentsResults(timestamp:=Now)
+        ' Acceso propiedades del item
+        Dim itemPropDefs As PropDef() = mPropertyService.GetPropertyDefinitionsByEntityClassId("ITEM")
+        ' Acceso a la propiedad Number del item
+        Dim itemNumberPropDef As PropDef = itemPropDefs.[Single](Function(n) n.SysName = "Number")
 
-        For Each mItems In mItemsAndFiles.ItemRevArray()
-            Debug.Print(mItems.ItemNum)
+        ' SrchOper 3 => equals
+        Dim principalModelStateItems As New SrchCond() With {
+        .PropDefId = itemNumberPropDef.Id,
+        .PropTyp = PropertySearchType.SingleProperty,
+        .SrchOper = 3,
+        .SrchRule = SearchRuleType.Must,
+        .SrchTxt = "???.??????"
+        }
+
+        Dim bookmark As String = String.Empty
+        Dim status As SrchStatus = Nothing
+        Dim totalResults As New List(Of Item)()
+        Dim result As Item
+        Dim resultIds As Long() = New Long() {}
+
+        While status Is Nothing OrElse totalResults.Count < status.TotalHits
+            Dim results As Item() = mItemService.FindItemRevisionsBySearchConditions(
+                New SrchCond() {principalModelStateItems},
+                Nothing,
+                False,
+                bookmark,
+                status)
+
+            If results IsNot Nothing Then
+                totalResults.AddRange(results)
+                Debug.Print(results.Length)
+            Else
+                Exit While
+            End If
+
+        End While
+
+        For Each result In totalResults
+            ReDim Preserve resultIds(resultIds.Length)
+            resultIds(resultIds.Length - 1) = result.MasterId
         Next
 
-        For Each mFileId In e.FileIds
-            For Each mItemId In mItemIds.PrimaryArray()
-                mFile = mDocumentService.GetFileById(mFileId)
-                mFileProperties = mPropertyService.GetPropertiesByEntityIds("FILE", New Long() {mFile.Id})
+        mItemService.DeleteItemsUnconditional(resultIds)
 
-                ' Dim itemProperties As PropInst() = propSvc.GetPropertiesByEntityIds("ITEM", New Long() {Item.Id})
-                Debug.Print("##################################################################################################")
-                Debug.Print("El fichero: " & mFile.Name &
-                            " con Id: " & mFileId &
-                            " se va a promocionar al Item: " & mItemId)
-
-                For Each mProperty In mFileProperties
-                    mPropertyDefinition = mPropertyService.GetPropertyDefinitionInfosByEntityClassId("FILE", New Long() {mProperty.PropDefId})
-                    If mPropertyDefinition(0).PropDef.DispName <> "Miniatura" And
-                    (mPropertyDefinition(0).PropDef.DispName = "Nº de pieza" Or mPropertyDefinition(0).PropDef.DispName = "Extensión de archivo") Then
-                        ' If mPropertyDefinition(0).PropDef.DispName <> "Miniatura" Then
-                        Debug.Print(mPropertyDefinition(0).PropDef.Id &
-                                    " : " & mPropertyDefinition(0).PropDef.DispName &
-                                    " = " & mProperty.Val)
-                    End If
-                Next
-            Next
-        Next
-        Debug.Print("eureka or not? parece que si")
     End Sub
 
 End Class
