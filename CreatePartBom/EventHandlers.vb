@@ -13,12 +13,12 @@ Public Class EventHandlers
 
     Public Sub OnLoad() Implements IWebServiceExtension.OnLoad
         ' Item Events
-        AddHandler ItemService.PromoteItemEvents.Pre, AddressOf PromoteItemEvents_Pre
+        AddHandler ItemService.UpdateItemLifecycleStateEvents.Post, AddressOf UpdateItemLifecycleStateEvents_Post
     End Sub
 
 #End Region
 
-    Private Sub PromoteItemEvents_Pre(ByVal sender As Object, ByVal e As PromoteItemCommandEventArgs)
+    Private Sub UpdateItemLifecycleStateEvents_Post(ByVal sender As Object, ByVal e As UpdateItemLifeCycleStateCommandEventArgs)
 
         Dim mItemService As Autodesk.Connectivity.WebServices.ItemService = sender
         Dim mDocumentService As Autodesk.Connectivity.WebServices.DocumentService = mItemService.WebServiceManager.DocumentService
