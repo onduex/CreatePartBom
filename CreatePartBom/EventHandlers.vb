@@ -1,7 +1,8 @@
 Imports Autodesk.Connectivity.Extensibility.Framework
 Imports Autodesk.Connectivity.WebServices
-Imports ACW = Autodesk.Connectivity.WebServices
-Imports ACWT = Autodesk.Connectivity.WebServicesTools
+Imports System.IO
+
+
 
 <Assembly: ApiVersion("17.0")>
 <Assembly: ExtensionId("89facae7-a876-4ce5-8d9f-a20666971e21")>
@@ -13,10 +14,53 @@ Public Class EventHandlers
 
     Public Sub OnLoad() Implements IWebServiceExtension.OnLoad
         ' Item Events
+        AddHandler ItemService.UpdateItemLifecycleStateEvents.GetRestrictions, AddressOf UpdateItemLifecycleStateEvents_GetRestrictions
         AddHandler ItemService.UpdateItemLifecycleStateEvents.Post, AddressOf UpdateItemLifecycleStateEvents_Post
     End Sub
 
 #End Region
+
+    Private Sub UpdateItemLifecycleStateEvents_GetRestrictions(ByVal sender As Object, ByVal e As UpdateItemLifeCycleStateCommandEventArgs)
+
+        Dim mItemService As Autodesk.Connectivity.WebServices.ItemService = sender
+        Dim mDocumentService As Autodesk.Connectivity.WebServices.DocumentService = mItemService.WebServiceManager.DocumentService
+        Dim mPropertyService As Autodesk.Connectivity.WebServices.PropertyService = mItemService.WebServiceManager.PropertyService
+
+        ' Acceso propiedades del item
+        Dim itemPropDefs As PropDef() = mPropertyService.GetPropertyDefinitionsByEntityClassId("ITEM")
+        ' Acceso a la propiedad Number del item
+        Dim itemNumberPropDef As PropDef = itemPropDefs.[Single](Function(n) n.SysName = "Number")
+        Dim itemRevNumberPropDef As PropDef = itemPropDefs.[Single](Function(n) n.SysName = "RevNumber")
+        Dim results As Item() = mItemService.GetLatestItemsByItemMasterIds(e.ItemMasterIds)
+        Dim result As Item
+
+        For Each result In results
+            Dim suffix As String = ""
+            Dim prefixPng As String = "R:\dtecnic\PLANOS\0_PNG\"
+            Dim prefixPdf As String = "R:\dtecnic\PLANOS\1_PDF\"
+
+            If Len(result.RevNum) = 1 Then
+                suffix = "_R0" & result.RevNum
+            ElseIf Len(result.RevNum) = 2 Then
+                suffix = "_R" & result.RevNum
+            End If
+
+            Dim itemNumber3 As String = result.ItemNum.Substring(0, 3) & "\"
+            Dim itemNumber7 As String = result.ItemNum.Substring(0, 7) & "\"
+            Dim pathPng As String = prefixPng & itemNumber3 & itemNumber7 & result.ItemNum & suffix & ".png"
+            Dim pathPdf As String = prefixPdf & itemNumber3 & itemNumber7 & result.ItemNum & suffix & ".pdf"
+            Dim restrictionPng As New ExtensionRestriction("Item " & result.ItemNum, "No existe: " & pathPng)
+            Dim restrictionPdf As New ExtensionRestriction("Item " & result.ItemNum, "No existe: " & pathPdf)
+
+            If Not System.IO.File.Exists(pathPng) Then
+                e.AddRestriction(restrictionPng)
+            End If
+            If Not System.IO.File.Exists(pathPdf) Then
+                e.AddRestriction(restrictionPdf)
+            End If
+        Next
+
+    End Sub
 
     Private Sub UpdateItemLifecycleStateEvents_Post(ByVal sender As Object, ByVal e As UpdateItemLifeCycleStateCommandEventArgs)
 
@@ -54,7 +98,7 @@ Public Class EventHandlers
 
             If results IsNot Nothing Then
                 totalResults.AddRange(results)
-                Debug.Print(results.Length)
+                Debug.Print("Items de 10 dígitos borrados: " & results.Length)
             Else
                 Exit While
             End If
@@ -66,7 +110,9 @@ Public Class EventHandlers
             resultIds(resultIds.Length - 1) = result.MasterId
         Next
 
-        mItemService.DeleteItemsUnconditional(resultIds)
+        If resultIds.Length <> 0 Then
+            mItemService.DeleteItemsUnconditional(resultIds)
+        End If
 
     End Sub
 
