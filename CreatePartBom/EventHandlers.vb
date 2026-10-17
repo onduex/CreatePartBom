@@ -5,7 +5,7 @@ Imports System.Linq
 Imports Autodesk.Connectivity.Extensibility.Framework
 Imports Autodesk.Connectivity.WebServices
 
-<Assembly: ApiVersion("17.0")>
+<Assembly: ApiVersion("20.0")>
 <Assembly: ExtensionId("89facae7-a876-4ce5-8d9f-a20666971e21")>
 
 Public Class EventHandlers
@@ -20,6 +20,7 @@ Public Class EventHandlers
     Public Sub OnLoad() Implements IWebServiceExtension.OnLoad
         AddHandler ItemService.AddItemEvents.Post, AddressOf AddItemEvents_Post
         AddHandler ItemService.EditItemEvents.Post, AddressOf EditItemEvents_Post
+        Debug.Print("Loading...")
     End Sub
 
     Private Sub AddItemEvents_Post(ByVal sender As Object, ByVal e As AddItemCommandEventArgs)
@@ -67,7 +68,9 @@ Public Class EventHandlers
             Dim rawMaterialQuantityDef As PropDef =
                 GetPropertyDefinition(propertyDefinitions, "_RM_QTY")
             Dim itemNumberDef As PropDef =
-                GetPropertyDefinition(propertyDefinitions, "Number")
+                GetPropertyDefinition(propertyDefinitions, "Número")
+
+            Debug.Print("Loading...")
 
             Dim propertyInstances As PropInst() = propertyService.GetProperties(
                 ItemEntityClassId,
@@ -188,9 +191,9 @@ Public Class EventHandlers
 
         Dim definition As PropDef = propertyDefinitions.FirstOrDefault(
             Function(candidate) String.Equals(
-                candidate.SysName,
+                candidate.DispName,
                 sysName,
-                StringComparison.Ordinal))
+                StringComparison.OrdinalIgnoreCase))
 
         If definition Is Nothing Then
             Throw New InvalidOperationException(

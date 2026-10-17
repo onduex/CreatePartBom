@@ -12,7 +12,7 @@ Imports System.Runtime.InteropServices
 <Assembly: AssemblyDescription("CreatePartBom")>
 <Assembly: AssemblyCompany("Onduex")>
 <Assembly: AssemblyProduct("CreatePartBom")>
-<Assembly: AssemblyCopyright("Copyright © Onduex 2023")>
+<Assembly: AssemblyCopyright("Copyright © Onduex 2027")>
 <Assembly: AssemblyTrademark("")>
 
 <Assembly: ComVisible(False)>
